@@ -1,5 +1,5 @@
 // Copyright (c) 2023 James Kilts
-// Licensed under AGPL
+// Licensed under the GNU Affero General Public License v3.0
 
 class LocalSequenceDiagrams {
   constructor(colorForeground = "#000", colorBackground = "#fff") {
