@@ -1,4 +1,4 @@
-// Copyright (c) 2023 James Kilts
+// Copyright (c) 2024 James Kilts
 // Licensed under the GNU Affero General Public License v3.0
 
 class LocalSequenceDiagrams {
@@ -587,6 +587,7 @@ class LocalSequenceDiagrams {
 
     if (signal.startX == signal.endX) {
         // Self-arrow
+        attrs["fill"] = "none";
         attrs["d"] = `
             M ${signal.startX} ${signal.startY - 10}
             h ${signal.endY - signal.startY + 50} 
