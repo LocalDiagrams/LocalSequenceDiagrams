@@ -258,7 +258,7 @@ class LocalSequenceDiagrams {
     }
 
     // Distribute the needed space between the lanes if there's not enough room
-    // First, CONTIGUOUS lanes
+    // First, CONTIGUOUS and SAME lanes
 
     for (let i = 0; i < gapMinSizeBetweenLanes.length; i++) {
         const g = gapMinSizeBetweenLanes[i];
@@ -266,8 +266,13 @@ class LocalSequenceDiagrams {
         var idx1 = Math.min(g[0], g[1]);
         var idx2 = Math.max(g[0], g[1]);
 
+        // Contiguous
         if (idx1+1 == idx2 && gaps[idx1+1] < g[2]) {
             gaps[idx1+1] = g[2];
+        }
+        // Same lane
+        if (idx1 == idx2 && gaps[idx1] < g[2]) {
+            gaps[idx1] = g[2];
         }
     }
 
