@@ -1,32 +1,35 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="description" content="Scripts are NEVER sent to a server. Unlike WebSequenceDiagrams, all data is processed in your local browser. Easier than setting up a PlantUML server.">
 <head>
-<title>Local Sequence Diagrams</title>
+<title>Local Sequence Diagrams (An alternative to WebSequenceDiagrams and PlantUML)</title>
 <style>
 body {
   font-family: system-ui, Roboto, "Helvetica Neue", "Segoe UI", Oxygen-Sans, Ubuntu, Cantarell, sans-serif;
 }
 #header {
-    background-color: #51437b;
-    color: #eee;
-    height:50px;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: space-between;
+  background-color: #51437b;
+  color: #eee;
+  height: 50px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
 }
 #header #left-side {
   font-weight:100;
   font-size: 18pt;
   padding: 10px 20px;
+  display: flex;
+  align-items: center;
 }
 #header #right-side a {
-    color: #bbf;
-    padding: 20px;
+  color: #bbf;
+  padding: 20px;
 }
 #header #right-side {
   font-weight:100;
@@ -36,30 +39,55 @@ body {
   justify-content: center;
   align-items: center;
 }
+
 #scriptContent, #diagramTarget {
-    background-color: #555;
-    position: absolute;
-    overflow: scroll;
-    top: 50px;
-    bottom: 0;
-    padding: 20px;
+  background-color: #555;
+  position: absolute;
+  overflow: scroll;
+  top: 50px;
+  bottom: 0;
+  padding: 20px;
 }
 #scriptContent {
-    color: white;
-    left: 0;
-    width: 40%;
-    border: none;
+  color: white;
+  left: 0;
+  width: 40%;
+  border: none;
   outline: none;
   resize: none;
+  border-radius: 0;
+  -webkit-appearance: none;
 }
 #diagramTarget {
-    background-color: #333;
-    right: 0;
-    left: 40%;
+  background-color: #333;
+  right: 0;
+  left: 40%;
 }
+
+@media only screen and (max-width: 600px) {
+  #header {
+    height: 30px;
+  }
+  #header #left-side {
+    font-size: 12px;
+  }
+  #header #right-side {
+    font-size: 9px;
+  }
+  #header #right-side a {
+    padding: 5px;
+  }
+
+  #scriptContent, #diagramTarget {
+    top: 30px;
+    padding: 1px;
+  }
+}
+
 .splitter:hover {
   cursor: move;
 }
+
 ::-webkit-scrollbar {
   width: 12px;
   height: 12px;
@@ -71,13 +99,41 @@ body {
 ::-webkit-scrollbar-corner {
   background-color: transparent;
 }
+
+dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 260px;
+  height: 260px;
+  border: 1px solid black;
+  padding: 40px;
+  background-color: #979797;
+  z-index: 100;
+}
+dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+dialog button.alt-color {
+  background-color: #bbb;
+}
+dialog button {
+  margin-top: 10px;
+  font-size: 18pt;
+  padding: 10px 20px;
+  border: solid 3px;
+  border-radius: 10px;
+}
+
 </style>
 </head>
 <body>
+
 <div id="header">
-    <div id="left-side">LocalSequenceDiagrams</div>
-    <div id="right-side"><a href="#">Why Local?</a><a href="#">GitHub</a></div>
+<div id="left-side">LocalSequenceDiagrams</div>
+<div id="right-side"><a href="#" id="copyButton">COPY</a><a href="https://github.com/LocalDiagrams/LocalSequenceDiagrams#whylocal">Why Local?</a><a href="https://github.com/LocalDiagrams/LocalSequenceDiagrams">GitHub</a></div>
 </div>
+
 <textarea id="scriptContent" spellcheck="false" oninput="updateDiagram()">
 actor string1 as L
 participant str2
@@ -104,8 +160,15 @@ else not sure
     string1->String3: last one to 3
 end
 </textarea>
-<div id="diagramTarget">
-</div>
+
+<div id="diagramTarget"></div>
+
+<dialog id="copyDialog">
+  <button id="copyDialogPngBtn">Copy PNG</button>
+  <button id="copyDialogSvgBtn">Copy SVG</button>
+  <button id="copyDialogTextBtn">Copy Script Text</button>
+  <button id="copyDialogCloseBtn" class="alt-color">Cancel</button>
+</dialog>
 
 <script>
 
@@ -155,11 +218,17 @@ class LocalSequenceDiagrams {
     this.padding = 10;
   }
 
-  renderToDom(script, domTarget) {
+  scriptToSvgImage(script) {
+    const svgString = this.scriptToSvgText(script);
+    const svgImage = new Image();
+    svgImage.src = "data:image/svg+xml," + encodeURIComponent(svgString);
+    return svgImage;
+  }
+
+  scriptToSvgText(script) {
     const { actors, events } = this.parseScriptToArrays(script);
     const { width, height } = this.calculatePlacements(actors, events);
-    const svgString = this.renderSvgElements(actors, events, width, height);
-    this.appendSvgToDom(svgString, domTarget);
+    return this.renderSvgElements(actors, events, width, height);
   }
 
   parseScriptToArrays(script) {
@@ -869,12 +938,6 @@ class LocalSequenceDiagrams {
     group.appendChild(text);
     return group;
   }
-
-  appendSvgToDom(svgString, el) {
-    const svgImage = new Image();
-    svgImage.src = "data:image/svg+xml," + encodeURIComponent(svgString);
-    el.appendChild(svgImage);
-  }
 }
 
 
@@ -898,53 +961,122 @@ function makeResizable(div1, div2) {
   splitter.style.backgroundColor = "rgba(0, 0, 0, 0.12)";
 
   // Splitter move beginning
-  splitter.addEventListener("mousedown", function(e) {
+  function startResize(e) {
     e.preventDefault();
 
     // Set a flag to indicate that the splitter is being dragged
-    // and store the initial mouse and splitter positions
+    // and store the initial mouse/touch and splitter positions
     splitter.resizeInProgress = true;
-    splitter.startMouseClientX = e.clientX;
+    splitter.startMouseClientX = e.clientX || e.touches[0].clientX;
     splitter.startLeft = parseInt(splitter.style.left, 10);
-  });
+  }
+  splitter.addEventListener("mousedown", startResize);
+  splitter.addEventListener("touchstart", startResize);
 
   // Splitter move event
-  document.body.addEventListener("mousemove", function(e) {
+  function moveResize(e) {
     if (splitter.resizeInProgress) {
 
-      // Calculate the new position of the splitter based on the mouse movement
-      let delta = e.clientX - splitter.startMouseClientX;
+      // Calculate the new position of the splitter based on the mouse/touch movement
+      let delta = (e.clientX || e.touches[0].clientX) - splitter.startMouseClientX;
       let newLeft = splitter.startLeft + delta;
+      let widthCorrection = e.clientX ? -10 : 0;
 
       // Update the style of the splitter and the divs
       splitter.style.left = newLeft + "px";
-      div1.style.width = (newLeft - div1.offsetLeft - 10) + "px";
+      div1.style.width = (newLeft - div1.offsetLeft + widthCorrection) + "px";
       div2.style.left = newLeft + "px";
     }
-  });
+  }
+  document.body.addEventListener("mousemove", moveResize);
+  document.body.addEventListener("touchmove", moveResize);
 
-  // splitter move complete
-  document.body.addEventListener("mouseup", function(e) {
+  // Splitter move complete
+  function endResize(e) {
     // Reset the flags if the splitter was actively being moved
     if (splitter.resizeInProgress) {
       splitter.resizeInProgress = false;
       splitter.startMouseClientX = null;
       splitter.startLeft = null;
     }
-  });
+  }
+  document.body.addEventListener("mouseup", endResize);
+  document.body.addEventListener("touchend", endResize);
 }
 
 let s = document.getElementById("scriptContent");
 let d = document.getElementById("diagramTarget");
+let seqDiagram = new LocalSequenceDiagrams("#fff","#000");
 
-function updateDiagram(){
-    d.innerHTML = "";
-    new LocalSequenceDiagrams("#fff","#000").renderToDom(s.value, d);
+function updateDiagram() {
+    const script = s.value;
+
+    d.innerHTML = "";  // clear the existing image (if present)
+    d.appendChild(seqDiagram.scriptToSvgImage(script));
 }
 
 updateDiagram();
 
 makeResizable(s, d);
+
+
+const copyDialog = document.querySelector('#copyDialog');
+
+document.querySelector('#copyButton').addEventListener('click', () => {
+  copyDialog.showModal();
+});
+
+document.querySelector('#copyDialogCloseBtn').addEventListener('click', () => {
+  copyDialog.close();
+});
+
+document.querySelector('#copyDialogPngBtn').addEventListener('click', () => {
+    const script = s.value;
+    const svgImage = seqDiagram.scriptToSvgImage(script);
+
+    // Temporarily add a drawing canvas to the document
+    const canvas = document.createElement("canvas");
+    document.body.appendChild(canvas);
+
+    canvas.width = svgImage.width;
+    canvas.height = svgImage.height;
+
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(svgImage, 0, 0);
+
+    canvas.toBlob(b =>
+        navigator.clipboard.write([
+            new ClipboardItem({'image/png': b}),
+        ]).then(x => {
+            copyDialog.close();
+            alert('Copied!');
+        }),
+        'image/png');
+
+    // Remove the temporary canvas from the document
+    document.body.removeChild(canvas);
+});
+
+document.querySelector('#copyDialogSvgBtn').addEventListener('click', () => {
+    const script = s.value;
+    const svgString = seqDiagram.scriptToSvgText(script);
+
+    navigator.clipboard.writeText(svgString).then(x => {
+        copyDialog.close();
+        alert('Copied!');
+    });
+});
+
+document.querySelector('#copyDialogTextBtn').addEventListener('click', () => {
+    const script = s.value;
+
+    navigator.clipboard.writeText(script).then(x => {
+        copyDialog.close();
+        alert('Copied!');
+    });
+});
+
+
 
 </script>
 </body>
