@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="description" content="Scripts are NEVER sent to a server. Unlike WebSequenceDiagrams, all data is processed in your local browser. Easier than setting up a PlantUML server.">
+<head>
+<title>Local Sequence Diagrams (An alternative to WebSequenceDiagrams and PlantUML)</title>
+<style>
+body {
+  font-family: system-ui, Roboto, "Helvetica Neue", "Segoe UI", Oxygen-Sans, Ubuntu, Cantarell, sans-serif;
+  background: grey;
+}
+#header {
+  background-color: #51437b;
+  color: #eee;
+  height: 50px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+}
+#header #left-side {
+  font-weight:100;
+  font-size: 18pt;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+}
+#header #right-side a {
+  color: #bbf;
+  padding: 20px;
+}
+#header #right-side {
+  font-weight:100;
+  font-size: 12pt;
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+
+
+
+
+@media only screen and (max-width: 600px) {
+  #header {
+    height: 30px;
+  }
+  #header #left-side {
+    font-size: 12px;
+  }
+  #header #right-side {
+    font-size: 9px;
+  }
+  #header #right-side a {
+    padding: 5px;
+  }
+}
+
+.splitter:hover {
+  cursor: move;
+}
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #51437b;
+  border-radius: 5px;
+}
+::-webkit-scrollbar-corner {
+  background-color: transparent;
+}
+
+
+
+dialog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 260px;
+  height: 260px;
+  border: 1px solid black;
+  padding: 40px;
+  background-color: #979797;
+  z-index: 100;
+}
+dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.6);
+}
+dialog button.alt-color {
+  background-color: #bbb;
+}
+dialog button {
+  margin-top: 10px;
+  font-size: 18pt;
+  padding: 10px 20px;
+  border: solid 3px;
+  border-radius: 10px;
+}
+
+
+.scriptContainer {
+  margin: 20px;
+  display: flex;
+}
+.scriptContent, .diagramTarget {
+  display: inline-flex;
+  background-color: #555;
+  height: 400px;
+  overflow: scroll;
+  padding: 20px;
+}
+.scriptContent {
+  width: 30%;
+  color: white;
+  border: none;
+  outline: none;
+  resize: none;
+  border-radius: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.diagramTarget {
+  width: 50%;
+  color: #eee;
+  background-color: #333;
+  font-family: monospace;
+}
+
+
+
+</style>
+</head>
+<body>
+
+<div id="header">
+<div id="left-side">LocalSequenceDiagrams</div>
+<div id="right-side"><a href="#" id="copyButton">COPY</a><a href="https://github.com/LocalDiagrams/LocalSequenceDiagrams#whylocal">Why Local?</a><a href="https://github.com/LocalDiagrams/LocalSequenceDiagrams">GitHub</a></div>
+</div>
+
+<br><br><br>
+
+<div class="scriptContainer">
+<textarea class="scriptContent" id="scriptContent1" spellcheck="false" oninput="updateDiagram()">
+actor string1 as L
+participant str2
+participant String3
+participant yo
+
+string1->str2: from one to two
+string1->string1: self sd\nother
+string1->str2: from one to two
+":colon1"->str2: from one to two
+yo-->String3: from yo to three
+yo-->>String3: from yo to three
+note right of yo: thinking about it
+note left of yo: thinking about it much much longer
+note right of str2
+    hi
+    next line
+end
+alt succcess
+    string1->str2: again one to two
+else failure
+    note right of yo: not failure
+else not sure
+    string1->String3: last one to 3
+end
+</textarea>
+<div class="diagramTarget" id="diagramTarget1">
+</div>
+</div>
+
+<div class="scriptContainer">
+<textarea class="scriptContent" id="scriptContent2" spellcheck="false" oninput="updateDiagram2()">
+actor string1 as L
+participant str2
+participant String3
+participant yo
+
+string1->str2: from one to two
+string1->string1: self sd\nother
+string1->str2: from one to two
+":colon1"->str2: from one to two
+yo-->String3: from yo to three
+yo-->>String3: from yo to three
+note right of yo: thinking about it
+note left of yo: thinking about it much much longer
+note right of str2
+    hi
+    next line
+end
+alt succcess
+    string1->str2: again one to two
+else failure
+    note right of yo: not failure
+else not sure
+    string1->String3: last one to 3
+end
+</textarea>
+<div class="diagramTarget" id="diagramTarget2">
+</div>
+</div>
+
+
+<dialog id="copyDialog">
+  <button id="copyDialogPngBtn">Copy PNG</button>
+  <button id="copyDialogSvgBtn">Copy SVG</button>
+  <button id="copyDialogTextBtn">Copy Script Text</button>
+  <button id="copyDialogCloseBtn" class="alt-color">Cancel</button>
+</dialog>
+
+
+<script src="local-sequence-diagrams.js"></script>
+<script src="resizable.js"></script>
+<script src="simple-copy-dialog.js"></script>
+
+
+<script>
+let s = document.getElementById("scriptContent1");
+let d = document.getElementById("diagramTarget1");
+
+let s2 = document.getElementById("scriptContent2");
+let d2 = document.getElementById("diagramTarget2");
+
+let seqDiagram = new LocalSequenceDiagrams(null, null, "#fff", "#000");
+
+function updateDiagram() {
+    d.innerHTML = "";  // clear the existing image (if present)
+    d.appendChild(seqDiagram.scriptToSvgImage(s.value));
+}
+
+function updateDiagram2() {
+    d2.innerHTML = seqDiagram.scriptToAsciiArt(s2.value).replace(/\n/g, "<br>").replace(/\s/g, "&nbsp;");
+}
+
+updateDiagram();
+updateDiagram2();
+
+makeResizable(s, d);
+
+</script>
+</body>
+</html>
