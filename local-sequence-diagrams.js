@@ -71,14 +71,13 @@ class LocalSequenceDiagrams {
     scriptToSvgText(script) {
         const sizes = {
             padding: 10,
-            signalMargin: 50,
+            signalMargin: 25,
             noteMarginX: 10,
             noteMarginY: 20,
             noteTextMarginX: 10,
             noteTextMarginY: 25,
-            altMinHeight: 20,
+            altHeaderHeight: 20,
             altMarginBottom: 10,
-            altMarginItems: 30,
             actorStickmanHeight: 10,
             calculateTextDimensions: this.calculateTextDimensionsSvg.bind(this)
         };
@@ -95,9 +94,8 @@ class LocalSequenceDiagrams {
             noteMarginY: 1,
             noteTextMarginX: 1,
             noteTextMarginY: 1,
-            altMinHeight: 1,
-            altMarginBottom: 1,
-            altMarginItems: 1,
+            altHeaderHeight: 3,
+            altMarginBottom: 2,
             actorStickmanHeight: 1,
             calculateTextDimensions: this.calculateTextDimensionsAscii.bind(this)
         };
@@ -387,7 +385,7 @@ class LocalSequenceDiagrams {
 
         // Calculate EVENT locations
 
-        let y = this.calculateEventPlacements(actorDict, events, actorMaxHeight + sizes.padding * 2 + 1, actorOffsetX, sizes);
+        let y = this.calculateEventPlacements(actorDict, events, actorMaxHeight + sizes.padding * 2, actorOffsetX, sizes);
 
         // Calculate ACTOR sizes
 
@@ -442,11 +440,12 @@ class LocalSequenceDiagrams {
                 let a1 = actorDict[e.src];
                 let a2 = actorDict[e.dest];
                 if (a1 && a2) {
+                    const textOffset = (e.src == e.dest) ? sizes.padding : e.height; // self-arrow should not add the height of the text to the start of the arrow
                     e.startX = a1[0].lineX;
                     e.endX = a2[0].lineX;
-                    e.startY = y;
-                    e.endY = y;
-                    y += sizes.signalMargin + e.height;
+                    e.startY = y + textOffset;
+                    e.endY = y + textOffset;
+                    y += Math.max(textOffset, e.height + sizes.signalMargin);
                 }
             }
             else if (e.type == "note") {
@@ -463,17 +462,15 @@ class LocalSequenceDiagrams {
                 e.x = 0;
                 e.y = y;
 
-                y += sizes.altMarginItems;
-
-                let altHeight = sizes.altMinHeight;
                 for (let c = 0; c < e.cases.length; c++) {
+                    const startY = y;
+                    y += sizes.altHeaderHeight;
                     let endY = this.calculateEventPlacements(actorDict, e.cases[c].events, y, totalWidth, sizes);
-                    let caseHeight = endY - y;
+                    let caseHeight = endY - startY;
                     e.cases[c].height = caseHeight;
-                    altHeight += caseHeight;
                     y = endY;
                 }
-                e.height = altHeight;
+                e.height = y - e.y + 1;
                 e.width = totalWidth;
 
                 y += sizes.altMarginBottom;
@@ -946,8 +943,8 @@ class LocalSequenceDiagrams {
             // Self-arrow
             asciiArt[y-1][startX+1] = '─';
             asciiArt[y-1][startX+2] = '─';
-            asciiArt[y-1][startX+3] = '┐';
-            asciiArt[y][startX+3] = '┘';
+            asciiArt[y-1][startX+3] = '╮';
+            asciiArt[y][startX+3] = '╯';
             asciiArt[y][startX+2] = '─';
 
         } else {
@@ -1032,11 +1029,11 @@ class LocalSequenceDiagrams {
             const textStartX = Math.floor(alt.x + alt.width/2 - alt.cases[i].caption.length/2);
             if (i > 0) {
                 for (let w = 1; w < width-1; w++) {
-                    asciiArt[currentY][x+w] = '┈';
+                    asciiArt[currentY-1][x+w] = '┈';
                     // draw intersections with swimlanes with  ┼ ?
                 }
             }
-            this.drawAsciiText(asciiArt, `[${alt.cases[i].caption}]`, textStartX, currentY+1);
+            this.drawAsciiText(asciiArt, `[${alt.cases[i].caption}]`, textStartX, currentY);
             this.renderAsciiNestedEvents(asciiArt, alt.cases[i].events);
             currentY += alt.cases[i].height;
         }
